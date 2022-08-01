@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .filters import RecipeFilter
-from .models import Favorite, Recipe, RecipeIngredients, ShoppingList
+from .models import Favorite, Recipe, RecipeIngredient, ShoppingList
 from .permissions import IsAuthorOrAdminPermission
 from .serializers import (RecipeCreateUpdateSerializer, RecipeSerializer,
                           ShortRecipeSerializer)
@@ -30,74 +30,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=('post', 'delete'))
     def favorite(self, request, pk=None):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
+        action_for_create_or_delete(self, request, flag='Favorite', pk=None)
 
-        if self.request.method == 'POST':
-            if Favorite.objects.filter(
-                user=user,
-                recipe=recipe
-            ).exists():
-                raise exceptions.ValidationError('Рецепт уже в избранном.')
-            Favorite.objects.create(user=user, recipe=recipe)
-            serializer = ShortRecipeSerializer(
-                recipe,
-                context={'request': request}
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        if self.request.method == 'DELETE':
-            if not Favorite.objects.filter(
-                user=user,
-                recipe=recipe
-            ).exists():
-                raise exceptions.ValidationError(
-                    'Рецепта нет в избранном.'
-                )
-            favorite = get_object_or_404(Favorite, user=user, recipe=recipe)
-            favorite.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(detail=True, methods=('post', 'delete'))
     def shopping_cart(self, request, pk=None):
-        user = self.request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-
-        if self.request.method == 'POST':
-            if ShoppingList.objects.filter(
-                user=user,
-                recipe=recipe
-            ).exists():
-                raise exceptions.ValidationError(
-                    'Рецепт уже в списке покупок.'
-                )
-            ShoppingList.objects.create(user=user, recipe=recipe)
-            serializer = ShortRecipeSerializer(
-                recipe,
-                context={'request': request}
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        if self.request.method == 'DELETE':
-            if not ShoppingList.objects.filter(
-                user=user,
-                recipe=recipe
-            ).exists():
-                raise exceptions.ValidationError(
-                    'Рецепта нет в списке покупок.'
-                )
-            shopping_cart = get_object_or_404(
-                ShoppingList,
-                user=user,
-                recipe=recipe
-            )
-            shopping_cart.delete()
-
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        action_for_create_or_delete(self, request, flag='ShoppingList', pk=None)
 
     @action(
         detail=False,
@@ -105,15 +43,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,)
     )
     def download_shopping_cart(self, request):
-        shopping_cart = ShoppingList.objects.filter(user=self.request.user)
-        recipes = [item.recipe.id for item in shopping_cart]
-        buy_list = RecipeIngredients.objects.filter(
-            recipe__in=recipes
+        buy_list = RecipeIngredient.objects.filter(
+            recipe__shoppinglist__user=request.user
         ).values(
-            'ingredient'
-        ).annotate(
-            amount=Sum('amount')
-        )
+            'ingredient__name', 'ingredient__measurement_unit'
+        ).order_by(
+            'ingredient__name'
+        ).annotate(ingredient_total=Sum('amount'))
         buy_list_text = 'Список покупок:\n'
         for item in buy_list:
             ingredient = Ingredient.objects.get(pk=item['ingredient'])
@@ -126,3 +62,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'attachment; filename=shopping-list.txt'
         )
         return response
+
+
+def action_for_create_or_delete(self, request, flag, pk=None):
+    user = self.request.user
+    recipe = get_object_or_404(Recipe, pk=pk)
+
+    if self.request.method == 'POST':
+        if flag == 'Favorite':
+            Favorite.objects.create(user=user, recipe=recipe)
+        elif flag == 'ShoppingList':
+            ShoppingList.objects.create(user=user, recipe=recipe)
+        serializer = ShortRecipeSerializer(
+            recipe,
+            context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    if self.request.method == 'DELETE':
+        if flag == 'Favorite':
+            obj = get_object_or_404(Favorite, user=user, recipe=recipe)
+            obj.delete()
+        if flag == 'ShoppingList':
+            obj = get_object_or_404(ShoppingList, user=user, recipe=recipe)
+            obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

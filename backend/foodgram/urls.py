@@ -1,20 +1,15 @@
 from django.contrib import admin
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
 
-from ingredients.views import IngredientViewSet
-from recipes.views import RecipeViewSet
-from tags.views import TagViewSet
-from users.views import CustomUserViewSet
-
-router = DefaultRouter()
-router.register('ingredients', IngredientViewSet)
-router.register('recipes', RecipeViewSet)
-router.register('tags', TagViewSet)
-router.register('users', CustomUserViewSet)
+api_patterns = [
+    path('', include('ingredients.urls')),
+    path('', include('recipes.urls')),
+    path('', include('tags.urls')),
+    path('', include('users.urls')),
+]
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),
-    path('api/auth/', include('djoser.urls.authtoken'))
+    path('api/auth/', include('djoser.urls.authtoken')),
+    path('api/', include(api_patterns)),
 ]

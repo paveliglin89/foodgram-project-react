@@ -42,11 +42,6 @@ class SubscriptionSerializer(CustomUserSerializer):
         method_name='get_recipes_count'
     )
 
-    def get_srs(self):
-        from recipes.serializers import ShortRecipeSerializer
-
-        return ShortRecipeSerializer
-
     def get_recipes(self, obj):
         author_recipes = Recipe.objects.filter(author=obj)
 
@@ -55,7 +50,9 @@ class SubscriptionSerializer(CustomUserSerializer):
             author_recipes = author_recipes[:int(recipes_limit)]
 
         if author_recipes:
-            serializer = self.get_srs()(
+            from recipes.serializers import ShortRecipeSerializer
+
+            serializer = ShortRecipeSerializer(
                 author_recipes,
                 context={'request': self.context.get('request')},
                 many=True
@@ -71,3 +68,15 @@ class SubscriptionSerializer(CustomUserSerializer):
         model = User
         fields = ('id', 'username', 'first_name', 'last_name', 'email',
                   'is_subscribed', 'recipes', 'recipes_count')
+        validators = [serializers.UniqueTogetherValidator(
+            queryset=Subscription.objects.all(),
+            fields=('user', 'author'),
+            message='Подписка уже оформлена.'
+        )]
+
+    def validate(self, data):
+        if data['user'] == data['author']:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на себя.'
+            )
+        return data
