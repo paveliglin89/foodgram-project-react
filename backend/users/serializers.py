@@ -1,3 +1,5 @@
+import recipes.serializers
+
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
@@ -50,9 +52,7 @@ class SubscriptionSerializer(CustomUserSerializer):
             author_recipes = author_recipes[:int(recipes_limit)]
 
         if author_recipes:
-            from recipes.serializers import ShortRecipeSerializer
-
-            serializer = ShortRecipeSerializer(
+            serializer = recipes.serializers.ShortRecipeSerializer(
                 author_recipes,
                 context={'request': self.context.get('request')},
                 many=True

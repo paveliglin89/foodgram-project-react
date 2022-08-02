@@ -1,10 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
-from django.shortcuts import get_object_or_404
 from drf_base64.fields import Base64ImageField
 from rest_framework import exceptions, serializers
 
 from .models import Favorite, Recipe, RecipeIngredient, ShoppingList
+from .utils import create_recepie_ingredients, update_recepie_ingredients
 from ingredients.models import Ingredient
 from tags.models import Tag
 from tags.serializers import TagSerializer
@@ -43,9 +43,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True,
         source='recipeingredient_set'
     )
-    ingredients = serializers.SerializerMethodField(
-        method_name='get_ingredients'
-    )
     is_favorited = serializers.SerializerMethodField(
         method_name='get_is_favorited'
     )
@@ -65,7 +62,11 @@ class RecipeSerializer(serializers.ModelSerializer):
             return False
         return ShoppingList.objects.filter(user=user, recipe=obj).exists()
 
-    def validate_recipe(self, data):
+    class Meta:
+        model = Recipe
+        exclude = ('pub_date',)
+
+    def validate(self, data):
         user = self.context.get("request").user
         new_recipe = self.initial_data.get("recipe")
         if (
@@ -73,7 +74,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             .filter(user=user, recipe=new_recipe)
             .exists()
         ):
-            raise exceptions.ValidationError("Этот рецепт у вас уже в избранном")
+            raise exceptions.ValidationError("Этот рецепт уже в избранном")
         recipe = data.get("recipe")
         if (
             ShoppingList.objects.all()
@@ -81,11 +82,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             .exists()
         ):
             raise exceptions.ValidationError("Этот рецепт уже в вашей корзине")
-        return data  
-
-    class Meta:
-        model = Recipe
-        exclude = ('pub_date',)
+        return data
 
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
@@ -126,27 +123,13 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                 )
         return value
 
-    def get_recepie_ingredients_list(ingredients, recipe):
-        recepie_ingredients = []
-        for ingredient in ingredients:
-            ingredient =  get_object_or_404(Ingredient, pk=ingredient['id'])
-            amount = ingredient['amount']
-            recepie_ingredient = RecipeIngredient(
-                recipe=recipe,
-                ingredient=ingredient,
-                amount=amount
-            )
-            recepie_ingredients.append(recepie_ingredient)
-        return recepie_ingredients
-
     def create(self, validated_data):
         author = self.context.get('request').user
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(author=author, **validated_data)
         recipe.tags.set(tags)
-        recepie_ingredients = get_recepie_ingredients_list(ingredients, recipe)
-        RecipeIngredient.objects.bulk_create(recepie_ingredients)
+        create_recepie_ingredients(ingredients, recipe)
         return recipe
 
     def update(self, instance, validated_data):
@@ -156,8 +139,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients', None)
         if ingredients is not None:
             instance.ingredients.clear()
-            recepie_ingredients = get_recepie_ingredients_list(ingredients, instance)
-            RecipeIngredient.objects.bulk_update(recepie_ingredients)
+            update_recepie_ingredients(ingredients, instance)
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
@@ -170,20 +152,6 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         exclude = ('pub_date',)
-
-
-def get_recepie_ingredients_list(ingredients, recipe):
-    recepie_ingredients = []
-    for ingredient in ingredients:
-        ingredient =  get_object_or_404(Ingredient, pk=ingredient['id'])
-        amount = ingredient['amount']
-        recepie_ingredient = RecipeIngredient(
-            recipe=recipe,
-            ingredient=ingredient,
-            amount=amount
-        )
-        recepie_ingredients.append(recepie_ingredient)
-    return recepie_ingredients
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
