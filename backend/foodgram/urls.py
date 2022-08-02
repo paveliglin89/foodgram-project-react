@@ -2,10 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 api_patterns = [
-    path('', include('ingredients.urls')),
-    path('', include('recipes.urls')),
-    path('', include('tags.urls')),
-    path('', include('users.urls')),
+    path('', include('api.urls')),
 ]
 
 urlpatterns = [
