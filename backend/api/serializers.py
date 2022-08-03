@@ -1,10 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
-from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_base64.fields import Base64ImageField
-from rest_framework import exceptions, serializers, status
-from rest_framework.response import Response
+from rest_framework import exceptions, serializers
 
 from .utils import create_recepie_ingredients
 from ingredients.models import Ingredient
@@ -229,23 +227,3 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
-
-
-def action_create_or_delete(self, request, model, pk=None):
-    user = self.request.user
-    recipe = get_object_or_404(Recipe, pk=pk)
-
-    if self.request.method == 'POST':
-        model.objects.create(user=user, recipe=recipe)
-        serializer = ShortRecipeSerializer(
-            recipe,
-            context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    if self.request.method == 'DELETE':
-        obj = get_object_or_404(model, user=user, recipe=recipe)
-        obj.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

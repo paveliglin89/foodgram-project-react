@@ -20,9 +20,10 @@ from .pagination import CustomPageNumberPagination
 from .permissions import IsAuthorOrAdminPermission
 from .serializers import (
     IngredientSerializer, RecipeCreateUpdateSerializer,
-    RecipeSerializer, SubscriptionSerializer, TagSerializer,
-    action_create_or_delete,
+    RecipeSerializer, ShortRecipeSerializer, SubscriptionSerializer,
+    TagSerializer,
 )
+from .utils import action_create_or_delete
 
 User = get_user_model()
 
@@ -54,13 +55,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=('post', 'delete'))
     def favorite(self, request, pk=None):
         return action_create_or_delete(
-            self, request, model=Favorite, pk=None
+            self, request, model=Favorite,
+            serializer=ShortRecipeSerializer, pk=None
         )
 
     @action(detail=True, methods=('post', 'delete'))
     def shopping_cart(self, request, pk=None):
         return action_create_or_delete(
-            self, request, model=ShoppingList, pk=None
+            self, request, model=ShoppingList,
+            serializer=ShortRecipeSerializer, pk=None
         )
 
     @action(
