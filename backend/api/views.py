@@ -102,30 +102,62 @@ class RecipeViewSet(viewsets.ModelViewSet):
         #     serializer=ShortRecipeSerializer, pk=None
         # )
 
+    # @action(
+    #     detail=False,
+    #     methods=('get',),
+    #     permission_classes=(IsAuthenticated,)
+    # )
+    # def download_shopping_cart(self, request):
+    #     buy_list = RecipeIngredient.objects.filter(
+    #         recipe__shoppinglist__user=request.user
+    #     ).values(
+    #         'ingredient__name', 'ingredient__measurement_unit'
+    #     ).order_by(
+    #         'ingredient__name'
+    #     ).annotate(ingredient_total=Sum('amount'))
+    #     buy_list_text = 'Список покупок:\n'
+    #     for item in buy_list:
+    #         ingredient = Ingredient.objects.get(pk=item['ingredient'])
+    #         amount = item['ingredient_total']
+    #         buy_list_text += (
+    #             f'#{ingredient.name},{amount}{ingredient.measurement_unit}\n'
+    #         )
+    #     response = HttpResponse(buy_list_text, content_type="text/plain")
+    #     response['Content-Disposition'] = (
+    #         'attachment; filename=shopping-list.txt'
+    #     )
+    #     return response
+
     @action(
         detail=False,
         methods=('get',),
         permission_classes=(IsAuthenticated,)
     )
     def download_shopping_cart(self, request):
+        shopping_cart = ShoppingList.objects.filter(user=self.request.user)
+        recipes = [item.recipe.id for item in shopping_cart]
         buy_list = RecipeIngredient.objects.filter(
-            recipe__shoppinglist__user=request.user
+            recipe__in=recipes
         ).values(
-            'ingredient__name', 'ingredient__measurement_unit'
-        ).order_by(
-            'ingredient__name'
-        ).annotate(ingredient_total=Sum('amount'))
-        buy_list_text = 'Список покупок:\n'
+            'ingredient'
+        ).annotate(
+            amount=Sum('amount')
+        )
+
+        buy_list_text = 'Список покупок с сайта Foodgram:\n\n'
         for item in buy_list:
             ingredient = Ingredient.objects.get(pk=item['ingredient'])
-            amount = item['ingredient_total']
+            amount = item['amount']
             buy_list_text += (
-                f'#{ingredient.name}, {amount} {ingredient.measurement_unit}\n'
+                f'{ingredient.name}, {amount} '
+                f'{ingredient.measurement_unit}\n'
             )
+
         response = HttpResponse(buy_list_text, content_type="text/plain")
         response['Content-Disposition'] = (
             'attachment; filename=shopping-list.txt'
         )
+
         return response
 
 
