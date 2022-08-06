@@ -2,13 +2,13 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_base64.fields import Base64ImageField
-from rest_framework import exceptions, serializers
-
-from .utils import create_recepie_ingredients
 from ingredients.models import Ingredient
 from recipes.models import Favorite, Recipe, RecipeIngredient, ShoppingList
+from rest_framework import exceptions, serializers
 from tags.models import Tag
 from users.models import Subscription
+
+from .utils import create_recepie_ingredients
 
 User = get_user_model()
 

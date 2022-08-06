@@ -1,9 +1,8 @@
 from django.shortcuts import get_object_or_404
+from ingredients.models import Ingredient
+from recipes.models import Recipe, RecipeIngredient
 from rest_framework import status
 from rest_framework.response import Response
-
-from recipes.models import Recipe, RecipeIngredient
-from ingredients.models import Ingredient
 
 
 def create_recepie_ingredients(ingredients, recipe):
