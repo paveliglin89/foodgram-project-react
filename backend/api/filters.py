@@ -17,7 +17,7 @@ class RecipeFilter(FilterSet):
         field_name='tags__slug',
     )
 
-    def get_is_favorite(self, queryset, name, value):
+    def get_is_favorited(self, queryset, name, value):
         if value:
             return queryset.filter(in_favorite__user=self.request.user)
         return queryset
