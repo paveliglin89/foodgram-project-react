@@ -185,10 +185,6 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                 raise exceptions.ValidationError(
                     'У рецепта не может быть два одинаковых ингредиента.'
                 )
-            if int(ingredient['amount']) <= 0:
-                raise exceptions.ValidationError(
-                    'Количество ингредиентов должно быть больше нуля.'
-                )
         return value
 
     def create(self, validated_data):
