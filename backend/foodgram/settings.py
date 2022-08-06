@@ -122,4 +122,4 @@ DJOSER = {
     },
 }
 
-AUTH_USER_MODEL = 'users.User'
+CSRF_TRUSTED_ORIGINS = ['https://*.158.160.5.115/',]
