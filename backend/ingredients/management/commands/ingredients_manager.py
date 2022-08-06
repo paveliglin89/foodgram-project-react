@@ -6,7 +6,7 @@ from recipes.models import Ingredient
 
 class Command(BaseCommand):
     """
-    Импорт ингредиентов из файла CSV.
+    Импорт ингредиентов из файла CSV
     """
 
     def handle(self, *args, **kwargs):
