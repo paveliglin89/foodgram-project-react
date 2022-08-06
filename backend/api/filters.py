@@ -20,9 +20,7 @@ class RecipeFilter(FilterSet):
     def get_is_favorite(self, queryset, name, value):
         if value:
             return queryset.filter(in_favorite__user=self.request.user)
-        return queryset.exclude(
-            in_favorite__user=self.request.user
-        )
+        return queryset
 
     def get_is_in_shopping_cart(self, queryset, name, value):
         if value:
