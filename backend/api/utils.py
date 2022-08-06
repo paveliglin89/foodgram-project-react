@@ -8,8 +8,8 @@ from rest_framework.response import Response
 def create_recepie_ingredients(ingredients, recipe):
     recepie_ingredients = []
     for ingredient in ingredients:
-        ingredient = get_object_or_404(Ingredient, pk=ingredient['id'])
         amount = ingredient['amount']
+        ingredient = get_object_or_404(Ingredient, pk=ingredient['id'])
         recepie_ingredient = RecipeIngredient(
             recipe=recipe,
             ingredient=ingredient,
