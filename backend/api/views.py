@@ -64,7 +64,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-        detail=False,
+        detail=True,
         methods=('get',),
         permission_classes=(IsAuthenticated,)
     )
@@ -95,7 +95,7 @@ class CustomUserViewSet(UserViewSet):
     pagination_class = CustomPageNumberPagination
 
     @action(
-        detail=False,
+        detail=True,
         methods=('get',),
         serializer_class=SubscriptionSerializer,
         permission_classes=(IsAuthenticated, )
