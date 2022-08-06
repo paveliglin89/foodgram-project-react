@@ -42,7 +42,7 @@ jobs:
             context: ./backend
             file: backend/Dockerfile
             push: true
-            tags: ${{ secrets.DOCKER_USERNAME }}/backend:latest
+            tags: ${{ secrets.DOCKER_USERNAME }}/foodgram:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -57,7 +57,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
-            sudo docker pull ${{  secrets.DOCKER_USERNAME  }}/backend
+            sudo docker pull ${{  secrets.DOCKER_USERNAME  }}/foodgram
             sudo docker-compose stop
             sudo docker-compose rm backend
             cd foodgram-project-react/infra

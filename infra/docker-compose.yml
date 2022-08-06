@@ -1,19 +1,17 @@
-version: '3.8'
+version: "3.8"
 services:
-
   db:
     image: postgres:13.0-alpine
     volumes:
-      - db:/var/lib/postgresql/data/
+      - /var/lib/postgresql/data/
     env_file:
       - ./.env
 
   backend:
-    build:
-      context: ../backend
+    image: firestar0502/foodgram:v1
     restart: always
     volumes:
-      - backend_static:/app/backend_static/
+      - static_value:/app/static/
       - media_value:/app/media/
     depends_on:
       - db
@@ -21,11 +19,9 @@ services:
       - ./.env
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: firestar0502/foodgram_frontend:v1
     volumes:
-      - ../frontend/:/app/result_build/
+      - frontend_value:/app/build/
 
   nginx:
     image: nginx:1.21.3-alpine
@@ -33,14 +29,15 @@ services:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ../frontend/build:/usr/share/nginx/html/
-      - ../docs/:/usr/share/nginx/html/api/docs/
-      - backend_static:/usr/share/nginx/html/backend_static/:ro
-      - media_value:/usr/share/nginx/html/media/:ro
+      - ./docs/:/usr/share/nginx/html/api/docs/
+      - frontend_value:/usr/share/nginx/html/
+      - static_value:/var/html/static/
+      - media_value:/var/html/media/
     depends_on:
       - backend
+      - frontend
 
 volumes:
-  db:
-  backend_static:
+  static_value:
   media_value:
+  frontend_value:
