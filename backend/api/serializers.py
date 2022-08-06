@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
+from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_base64.fields import Base64ImageField
 from ingredients.models import Ingredient
@@ -8,7 +9,7 @@ from rest_framework import exceptions, serializers
 from tags.models import Tag
 from users.models import Subscription
 
-from .utils import create_recepie_ingredients
+# from .utils import create_recepie_ingredients
 
 User = get_user_model()
 
@@ -108,7 +109,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'measurement_unit',)
+        fields = ('id', 'name', 'measurement_unit', 'amount', )
 
 
 class CreateUpdateRecipeIngredientSerializer(serializers.ModelSerializer):
@@ -194,7 +195,15 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(author=author, **validated_data)
         recipe.tags.set(tags)
-        create_recepie_ingredients(ingredients, recipe)
+        for ingredient in ingredients:
+            amount = ingredient['amount']
+            ingredient = get_object_or_404(Ingredient, pk=ingredient['id'])
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient=ingredient,
+                amount=amount
+            )
+        # create_recepie_ingredients(ingredients, recipe)
         return recipe
 
     def update(self, instance, validated_data):
@@ -204,7 +213,15 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients', None)
         if ingredients is not None:
             instance.ingredients.clear()
-            create_recepie_ingredients(ingredients, instance)
+            for ingredient in ingredients:
+                amount = ingredient['amount']
+                ingredient = get_object_or_404(Ingredient, pk=ingredient['id'])
+                RecipeIngredient.objects.update_or_create(
+                    recipe=instance,
+                    ingredient=ingredient,
+                    defaults={'amount': amount}
+                )
+            # create_recepie_ingredients(ingredients, instance)
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):

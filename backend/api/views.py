@@ -21,7 +21,6 @@ from .serializers import (IngredientSerializer, RecipeCreateUpdateSerializer,
                           RecipeSerializer, ShortRecipeSerializer,
                           SubscriptionSerializer, TagSerializer)
 
-# from .utils import action_create_or_delete
 
 User = get_user_model()
 
@@ -69,10 +68,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        # return action_create_or_delete(
-        #     self, request, model=Favorite,
-        #     serializer=ShortRecipeSerializer, pk=None
-        # )
 
     @action(detail=True, methods=('post', 'delete'))
     def shopping_cart(self, request, pk=None):
@@ -97,36 +92,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        # return action_create_or_delete(
-        #     self, request, model=ShoppingList,
-        #     serializer=ShortRecipeSerializer, pk=None
-        # )
-
-    # @action(
-    #     detail=False,
-    #     methods=('get',),
-    #     permission_classes=(IsAuthenticated,)
-    # )
-    # def download_shopping_cart(self, request):
-    #     buy_list = RecipeIngredient.objects.filter(
-    #         recipe__shoppinglist__user=request.user
-    #     ).values(
-    #         'ingredient__name', 'ingredient__measurement_unit'
-    #     ).order_by(
-    #         'ingredient__name'
-    #     ).annotate(ingredient_total=Sum('amount'))
-    #     buy_list_text = 'Список покупок:\n'
-    #     for item in buy_list:
-    #         ingredient = Ingredient.objects.get(pk=item['ingredient'])
-    #         amount = item['ingredient_total']
-    #         buy_list_text += (
-    #             f'#{ingredient.name},{amount}{ingredient.measurement_unit}\n'
-    #         )
-    #     response = HttpResponse(buy_list_text, content_type="text/plain")
-    #     response['Content-Disposition'] = (
-    #         'attachment; filename=shopping-list.txt'
-    #     )
-    #     return response
 
     @action(
         detail=False,
@@ -171,14 +136,6 @@ class CustomUserViewSet(UserViewSet):
         serializer_class=SubscriptionSerializer,
         permission_classes=(IsAuthenticated, )
     )
-    # def subscriptions(self, request):
-    #     user = request.user
-    #     queryset = Subscription.objects.filter(user=user)
-    #     paginated_queryset = self.paginate_queryset(queryset)
-    #     serializer = self.get_serializer(
-    #         paginated_queryset, many=True, context={'request': request}
-    #     )
-    #     return self.get_paginated_response(serializer.data)
     def subscriptions(self, request):
         user = self.request.user
         user_subscriptions = user.subscribes.all()
@@ -202,13 +159,6 @@ class CustomUserViewSet(UserViewSet):
             Subscription.objects.create(user=user, author=author)
             serializer = self.get_serializer(author)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-            # data = {'user': user.id, 'author': author.id}
-            # serializer = self.get_serializer(
-            #     data=data, context={'request': request}
-            # )
-            # serializer.is_valid(raise_exception=True)
-            # serializer.save()
-            # return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
             followed_user = get_object_or_404(
