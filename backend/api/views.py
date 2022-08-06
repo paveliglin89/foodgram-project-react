@@ -20,7 +20,7 @@ from .permissions import IsAuthorOrAdminPermission
 from .serializers import (IngredientSerializer, RecipeCreateUpdateSerializer,
                           RecipeSerializer, ShortRecipeSerializer,
                           SubscriptionSerializer, TagSerializer)
-from .utils import action_create_or_delete
+# from .utils import action_create_or_delete
 
 User = get_user_model()
 
@@ -51,17 +51,55 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=('post', 'delete'))
     def favorite(self, request, pk=None):
-        return action_create_or_delete(
-            self, request, model=Favorite,
-            serializer=ShortRecipeSerializer, pk=None
-        )
+        user = self.request.user
+        recipe = get_object_or_404(Recipe, pk=pk)
+
+        if self.request.method == 'POST':
+            Favorite.objects.create(user=user, recipe=recipe)
+            serializer = ShortRecipeSerializer(
+                recipe,
+                context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if self.request.method == 'DELETE':
+            favorite = get_object_or_404(Favorite, user=user, recipe=recipe)
+            favorite.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        # return action_create_or_delete(
+        #     self, request, model=Favorite,
+        #     serializer=ShortRecipeSerializer, pk=None
+        # )
 
     @action(detail=True, methods=('post', 'delete'))
     def shopping_cart(self, request, pk=None):
-        return action_create_or_delete(
-            self, request, model=ShoppingList,
-            serializer=ShortRecipeSerializer, pk=None
-        )
+        user = self.request.user
+        recipe = get_object_or_404(Recipe, pk=pk)
+
+        if self.request.method == 'POST':
+            ShoppingList.objects.create(user=user, recipe=recipe)
+            serializer = ShortRecipeSerializer(
+                recipe,
+                context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if self.request.method == 'DELETE':
+            shopping_cart = get_object_or_404(
+                ShoppingList,
+                user=user,
+                recipe=recipe
+            )
+            shopping_cart.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        # return action_create_or_delete(
+        #     self, request, model=ShoppingList,
+        #     serializer=ShortRecipeSerializer, pk=None
+        # )
 
     @action(
         detail=False,
@@ -100,13 +138,22 @@ class CustomUserViewSet(UserViewSet):
         serializer_class=SubscriptionSerializer,
         permission_classes=(IsAuthenticated, )
     )
+    # def subscriptions(self, request):
+    #     user = request.user
+    #     queryset = Subscription.objects.filter(user=user)
+    #     paginated_queryset = self.paginate_queryset(queryset)
+    #     serializer = self.get_serializer(
+    #         paginated_queryset, many=True, context={'request': request}
+    #     )
+    #     return self.get_paginated_response(serializer.data)
     def subscriptions(self, request):
-        user = request.user
-        queryset = Subscription.objects.filter(user=user)
+        user = self.request.user
+        user_subscriptions = user.subscribes.all()
+        authors = [item.author.id for item in user_subscriptions]
+        queryset = User.objects.filter(pk__in=authors)
         paginated_queryset = self.paginate_queryset(queryset)
-        serializer = self.get_serializer(
-            paginated_queryset, many=True, context={'request': request}
-        )
+        serializer = self.get_serializer(paginated_queryset, many=True)
+
         return self.get_paginated_response(serializer.data)
 
     @action(
@@ -119,13 +166,16 @@ class CustomUserViewSet(UserViewSet):
         author = get_object_or_404(User, pk=id)
 
         if self.request.method == 'POST':
-            data = {'user': user.id, 'author': author.id}
-            serializer = self.get_serializer(
-                data=data, context={'request': request}
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            Subscription.objects.create(user=user, author=author)
+            serializer = self.get_serializer(author)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # data = {'user': user.id, 'author': author.id}
+            # serializer = self.get_serializer(
+            #     data=data, context={'request': request}
+            # )
+            # serializer.is_valid(raise_exception=True)
+            # serializer.save()
+            # return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
             followed_user = get_object_or_404(
