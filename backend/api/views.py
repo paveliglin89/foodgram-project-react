@@ -21,7 +21,6 @@ from .serializers import (IngredientSerializer, RecipeCreateUpdateSerializer,
                           RecipeSerializer, ShortRecipeSerializer,
                           SubscriptionSerializer, TagSerializer)
 
-
 User = get_user_model()
 
 
