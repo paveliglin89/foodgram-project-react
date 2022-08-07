@@ -1,4 +1,4 @@
-![status](https://github.com/paveliglin89/foodgram-project-react/actions/workflows/yamdb_workflow.yml/badge.svg)
+![status](https://github.com/paveliglin89/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
 
 # Проект «Foodgram» - продуктовый помощник
 
